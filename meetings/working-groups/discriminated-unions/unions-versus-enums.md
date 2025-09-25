@@ -201,11 +201,75 @@ enum Gate { Locked, Closed, Open(float percentage) }
 
 This proposal recomends that if `unions` can have members, that `enum` be allowed to have members in a similar fashion.  Note: these members would likely be restricted to either statics, or the set of instance members that do not introduce new instance state.  So no instance fields, auto-properties, etc.
 
-### Open question:
-
-Enums declare a set of possible values (including how  to construct them)
-
 ### Enum shape translation
 
-`enum class` 
+#### `enum class`
+
+An `enum class` specifies that the enum type itself, and then the individual cases be reference types.  This would have the benefit of these enum instances being passable just as a pointer to the instantiated value on the heap, with the downside of those heap allocations.
+
+```c#
+enum class Gate
+{
+    Locked,
+    Open(DateTime openedAt);
+}
+
+// would translate to:
+
+abstract class Gate : System.Enum
+{
+    private Gate() { }
+
+    public sealed record Locked : Gate
+    {
+        public static readonly Gate Instance = new Locked();
+    }
+
+    public sealed record Open(DateTime openedAt) : Gate;
+}
+```
+
+Notes: While there are actual types generated for the individual cases, it is unclear if users would be allowed to reference these types directly.  A way to avoid this could be to emit them with unspeakable names that the compiler translated between.
+
+With records, there woudl also be a natural place to put value-specific members *if* we allow them to be declared with the value declaration itself in the enum.
+
+#### `enum struct`
+
+While the above translation works sensibly, it may not be desirable for consumers who wish to avoid hitting the heap as much as possible.  To that end, `enum struct` produces a struct based layout aimed at the lowest space overhead on the stack.
+
+For example:
+
+```c#
+enum struct X
+{
+    Locked,
+    Open(DateTime openedAt, int x);
+    Closed(string reason, int y);
+    Other(object reason, List<int> x, int y);
+}
+
+// Would translate to:
+
+struct X : System.Enum
+{
+    private int __discriminant;
+
+    // Largest space needed for all unmanaged fields
+    // in the largest possible value.  In this case
+    // space for DateTime+int in 'Open'
+    unmanaged_data<size> unmanaged_data;
+
+    // space for all reference fields in value with the most reference fields, in this case 'reason+x' in Other
+    object referenceField1, object referenceField2;
+
+    bool IsOpen => __discriminant == 1;
+    public (DateTime openedAt, int x) GetOpen()
+    {
+        // throw if wrong type
+        return // reinterpret unamanged data appropriately.
+    }
+
+    // etc.
+}
+```
 

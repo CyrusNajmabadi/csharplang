@@ -35,7 +35,7 @@ union X
 
 
 ```c#
-enum X
+enum Y
 {
     Value1,
     Value2,
@@ -44,6 +44,27 @@ enum X
     public bool IsValid => this switch { ... }
 }
 ```
+
+Both support pattern matching in intuitive fashions:
+
+```c#
+// unions
+x switch 
+{
+    int => ...,
+    string s => ...
+}
+
+// enums
+y switch
+{
+    Value1 => ...
+    Value2 v2 => ...
+    Value3(var x, _, true) => ...
+}
+```
+
+Note: as enum members are not types themselves, introduced variables (like 'v2') do not have a narrowed type.  Though, if we allow for members to be declared *within* a particular enum member itself, then those members could then be made available on those particular narrowed values.
 
 ## Starting point
 
@@ -179,4 +200,12 @@ enum Gate { Locked, Closed, Open(float percentage) }
 ```
 
 This proposal recomends that if `unions` can have members, that `enum` be allowed to have members in a similar fashion.  Note: these members would likely be restricted to either statics, or the set of instance members that do not introduce new instance state.  So no instance fields, auto-properties, etc.
+
+### Open question:
+
+Enums declare a set of possible values (including how  to construct them)
+
+### Enum shape translation
+
+`enum class` 
 

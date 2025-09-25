@@ -1,5 +1,9 @@
 # Native-sized integers
 
+[!INCLUDE[Specletdisclaimer](../speclet-disclaimer.md)]
+
+Champion issue: <https://github.com/dotnet/csharplang/issues/435>
+
 ## Summary
 [summary]: #summary
 
@@ -14,7 +18,6 @@ The identifiers `nint` and `nuint` are new contextual keywords that represent na
 The identifiers are only treated as keywords when name lookup does not find a viable result at that program location.
 ```C#
 nint x = 3;
-string y = nameof(nuint);
 _ = nint.Equals(x, 3);
 ```
 
@@ -203,7 +206,7 @@ These operators are considered during overload resolution based on normal rules 
 | `>>` | `nuint operator >>(nuint left, int right)` | `shr.un` |
 
 For some binary operators, the IL operators support additional operand types
-(see [ECMA-335](https://www.ecma-international.org/publications/files/ECMA-ST/ECMA-335.pdf) III.1.5 Operand type table).
+(see [ECMA-335](https://www.ecma-international.org/publications-and-standards/standards/ecma-335/) III.1.5 Operand type table).
 But the set of operand types supported by C# is limited for simplicity and for consistency with existing operators in the language.
 
 Lifted versions of the operators, where the arguments and return types are `nint?` and `nuint?`, are supported.
@@ -212,7 +215,7 @@ Compound assignment operations `x op= y` where `x` or `y` are native ints follow
 Specifically the expression is bound as `x = (T)(x op y)` where `T` is the type of `x` and where `x` is only evaluated once.
 
 The shift operators should mask the number of bits to shift - to 5 bits if `sizeof(nint)` is 4, and to 6 bits if `sizeof(nint)` is 8.
-(see [§11.10](https://github.com/dotnet/csharpstandard/blob/draft-v6/standard/expressions.md#1110-shift-operators)) in C# spec).
+(see [§12.11](https://github.com/dotnet/csharpstandard/blob/draft-v8/standard/expressions.md#1211-shift-operators)) in C# spec).
 
 The C#9 compiler will report errors binding to predefined native integer operators when compiling with an earlier language version,
 but will allow use of predefined conversions to and from native integers.
@@ -250,7 +253,7 @@ static T* SubRightU(T* x, nuint y) => x - y; // T* operator -(T* left, ulong rig
 ```
 
 ### Binary numeric promotions
-The _binary numeric promotions_ informative text (see [§11.4.7.3](https://github.com/dotnet/csharpstandard/blob/draft-v6/standard/expressions.md#11473-binary-numeric-promotions)) in C# spec) is updated as follows:
+The _binary numeric promotions_ informative text (see [§12.4.7.3](https://github.com/dotnet/csharpstandard/blob/draft-v8/standard/expressions.md#12473-binary-numeric-promotions)) in C# spec) is updated as follows:
 
 > -   …
 > -   Otherwise, if either operand is of type `ulong`, the other operand is converted to type `ulong`, or a binding-time error occurs if the other operand is of type `sbyte`, `short`, `int`, **`nint`**, or `long`.
@@ -332,7 +335,7 @@ enum E : nint // error: byte, sbyte, short, ushort, int, uint, long, or ulong ex
 Reads and writes are atomic for `nint` and `nuint`.
 
 Fields may be marked `volatile` for types `nint` and `nuint`.
-[ECMA-334](https://www.ecma-international.org/publications/files/ECMA-ST/ECMA-334.pdf) 15.5.4 does not include `enum` with base type `System.IntPtr` or `System.UIntPtr` however.
+[ECMA-334](https://www.ecma-international.org/publications-and-standards/standards/ecma-334/) 15.5.4 does not include `enum` with base type `System.IntPtr` or `System.UIntPtr` however.
 
 `default(nint)` and `new nint()` are equivalent to `(nint)0`; `default(nuint)` and `new nuint()` are equivalent to `(nuint)0`.
 

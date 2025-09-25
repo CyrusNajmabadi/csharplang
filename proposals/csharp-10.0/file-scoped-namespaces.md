@@ -1,5 +1,9 @@
 # File Scoped Namespaces
 
+[!INCLUDE[Specletdisclaimer](../speclet-disclaimer.md)]
+
+Champion issue: <https://github.com/dotnet/csharplang/issues/137>
+
 ## Summary
 
 File scoped namespaces use a less verbose format for the typical case of files containing only one namespace.  The file scoped namespace format is `namespace X.Y.Z;` (note the semicolon and lack of braces).  This allows for files like the following:
@@ -46,7 +50,7 @@ The primary goal of the feature therefore is to meet the needs of the majority o
 
 ## Detailed design
 
-This proposal takes the form of a diff to the existing compilation units ([§13.2](https://github.com/dotnet/csharpstandard/blob/draft-v6/standard/namespaces.md#132-compilation-units)) section of the specification.
+This proposal takes the form of a diff to the existing compilation units ([§14.2](https://github.com/dotnet/csharpstandard/blob/draft-v8/standard/namespaces.md#142-compilation-units)) section of the specification.
 
 ### Diff
 

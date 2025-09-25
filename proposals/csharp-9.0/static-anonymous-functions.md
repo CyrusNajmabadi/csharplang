@@ -1,5 +1,9 @@
 # Static anonymous functions
 
+[!INCLUDE[Specletdisclaimer](../speclet-disclaimer.md)]
+
+Champion issue: <https://github.com/dotnet/csharplang/issues/275>
+
 ## Summary
 
 Allow a 'static' modifier on lambdas and anonymous methods, which disallows capture of locals or instance state from containing scopes.

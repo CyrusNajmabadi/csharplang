@@ -1,5 +1,9 @@
 # Extended property patterns
 
+[!INCLUDE[Specletdisclaimer](../speclet-disclaimer.md)]
+
+Champion issue: <https://github.com/dotnet/csharplang/issues/4394>
+
 ## Summary
 [summary]: #summary
 

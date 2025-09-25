@@ -1,5 +1,9 @@
 # Generic Attributes
 
+[!INCLUDE[Specletdisclaimer](../speclet-disclaimer.md)]
+
+Champion issue: <https://github.com/dotnet/csharplang/issues/124>
+
 ## Summary
 [summary]: #summary
 
@@ -13,10 +17,10 @@ Currently attribute authors can take a `System.Type` as a parameter and have use
 ## Detailed design
 [design]: #detailed-design
 
-The following section is amended: [§14.2.4.2](https://github.com/dotnet/csharpstandard/blob/draft-v6/standard/classes.md#14242-base-classes)
+The following section is amended: [§15.2.4.2](https://github.com/dotnet/csharpstandard/blob/draft-v8/standard/classes.md#15242-base-classes)
 > The direct base class of a class type must not be any of the following types: System.Array, System.Delegate, System.MulticastDelegate, System.Enum, or System.ValueType. ~~Furthermore, a generic class declaration cannot use System.Attribute as a direct or indirect base class.~~
 
-One important note is that the following section of the spec is *unaffected* when referencing the point of usage of an attribute, i.e. within an attribute list: Type parameters - [§8.5](https://github.com/dotnet/csharpstandard/blob/draft-v6/standard/types.md#85-type-parameters).
+One important note is that the following section of the spec is *unaffected* when referencing the point of usage of an attribute, i.e. within an attribute list: Type parameters - [§8.5](https://github.com/dotnet/csharpstandard/blob/draft-v8/standard/types.md#85-type-parameters).
 
 > A type parameter cannot be used anywhere within an attribute.
 
@@ -57,4 +61,4 @@ Attribute authors who want users to be able to discover the requirements for the
 ## Design meetings
 
 - https://github.com/dotnet/csharplang/blob/main/meetings/2017/LDM-2017-02-21.md#generic-attributes
-    - At the time there was a concern that we would have to gate the feature on whether the target runtime supports it. (However, we now only support C# 10 on .NET 6. It would be nice to for the implementation to be aware of what minimum target framework supports the feature, but seems less essential today.)
+    - At the time there was a concern that we would have to gate the feature on whether the target runtime supports it. (However, we now only support C# 10 on .NET 6. It would be nice for the implementation to be aware of what minimum target framework supports the feature, but seems less essential today.)

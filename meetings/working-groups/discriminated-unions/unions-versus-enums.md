@@ -218,7 +218,7 @@ Benefits:
 - Better cache locality
 - Reduced GC pressure
 
-#### 4.4.3 Members and Methods
+#### Members and Methods
 
 Enhanced enums can contain members just like unions:
 

@@ -1,298 +1,618 @@
-# Unions versus Enums
+# Discriminated Unions and Enhanced Enums for C#
 
-This proposal aims to separate out two related union-esque concepts that have been discussed for quite some time.  Instead of a single language feature that attempts to unify them into one construct, an approach is taken to keep them separated, though with one built on top of the other.
+This proposal extends C#'s union capabilities by introducing enhanced enums as algebraic data types. While [type unions](https://raw.githubusercontent.com/dotnet/csharplang/refs/heads/main/proposals/unions.md) solve the problem of values that can be one of several existing types, enhanced enums provide rich, exhaustive case-based types with associated data, building on the familiar enum keyword.
 
-## Simple examples:
+## 1. Overview
 
-1. Unions would look something like:
+### Two Complementary Features
 
-    ```c#
-    union X { int, string, ... remaining *existing* types ... }
-    ```
+C# will gain two separate features for different modeling needs: type unions (already specified) and enhanced enums (this proposal). These features work together but solve distinct problems in the type system.
 
-2. Enums would look like:
+### At a Glance
 
-    ```c#
-    enum X
-    {
-        Value1,
-        Value2,
-        Value3(int x, string y, bool z),
-    }
-    ```
+```csharp
+// Type unions - one value, multiple possible types
+union Result { string, ValidationError, NetworkException }
 
-## Complex examples:
-
-1. Members allowed in both unions and enums:
-
-    ```c#
-    union X
-    {
-        int, string;
-        
-        public bool IsValid => this switch { ... }
-    }
-
-
-    ```c#
-    enum Y
-    {
-        Value1,
-        Value2,
-        Value3(int x, string y, bool z);
-        
-        public bool IsValid => this switch { ... }
-    }
-    ```
-
-2. Complex enums can be both reference types or value types:
-
-    ```c#
-    enum class Y // same as `enum Y
-    {
-        Value1,
-        Value2,
-        Value3(int x, string y, bool z);
-    }
-
-    // or
-
-    enum struct Y
-    {
-        Value1,
-        Value2,
-        Value3(int x, string y, bool z);   
-    }
-    ```
-
-    `enum class` opts for emitting as a reference type, with values on the heap.  `enum struct` opts for emitting as a value type, optimized for size.
-
-
-3. Both support pattern matching in intuitive fashions:
-
-    ```c#
-    // unions
-    x switch 
-    {
-        int => ...,
-        string s => ...
-    }
-
-    // enums
-    y switch
-    {
-        Value1 => ...
-        Value2 v2 => ...
-        Value3(var x, _, true) => ...
-    }
-    ```
-
-    Note: as enum members are not types themselves, introduced variables (like 'v2') do not have a narrowed type.  Though, if we allow for members to be declared *within* a particular enum member itself, then those members could then be made available on those particular narrowed values.
-
-## Starting point
-
-This proposal builds off of the current [Unions](https://github.com/dotnet/csharplang/blob/38fd5f33d285cb190268f98cea16223cc0a5b8bc/proposals/unions.md) proposal, leaving it virtually unchanged.  Importantly, it maintains the view that a `Union` is effectively just a way of specifying the set of `Types` that a value could be.  The exact syntax of to define a `Union` is not important to this proposal.  But, for the purposes of discussion is presumed to be something like:
-
-```c#
-union StringOrInt
+// Enhanced enums - one type, multiple possible shapes  
+enum PaymentResult
 {
-    int,
-    string
+    Success(string transactionId),
+    Declined(string reason),
+    PartialRefund(string originalId, decimal amount)
 }
 ```
 
-It is also presumed that unions are somewhat normal declarations, that themselves could themselves have members:
+Type unions excel when you need to handle values that could be any of several existing types. Enhanced enums shine when modeling a single concept that can take different forms, each potentially carrying different data.
 
-```c#
-union StringOrInt
+## 2. Motivation and Design Philosophy
+
+### Distinct Problem Spaces
+
+Type unions and enhanced enums address fundamentally different modeling needs:
+
+**Type unions** bring together disparate existing types. You use them when the types already exist and you need to express "this or that" relationships. The focus is on the types themselves.
+
+**Enhanced enums** define a single type with multiple shapes or cases. You use them for algebraic data types where the focus is on the different forms a value can take, not on combining pre-existing types.
+
+### Limitations of Current Enums
+
+Today's C# enums have served us well but have significant limitations:
+
+1. **No associated data**: Cases are merely integral values, unable to carry additional information
+2. **Not truly exhaustive**: Any integer can be cast to an enum type, breaking exhaustiveness guarantees
+2. **Limited to integers**: Cannot use other primitive types like strings or doubles
+
+Enhanced enums address all these limitations while preserving the conceptual simplicity developers expect.
+
+### Building on Familiar Concepts
+
+By extending the existing `enum` keyword rather than introducing entirely new syntax, enhanced enums provide progressive disclosure. Simple enums remain simple, while advanced scenarios become possible without abandoning familiar patterns.
+
+## 3. Type Unions (Brief Context)
+
+### Core Concepts
+
+Type unions are fully specified in the [unions proposal](https://raw.githubusercontent.com/dotnet/csharplang/refs/heads/main/proposals/unions.md#summary). They provide:
+
+- Implicit conversions from case types to the union type
+- Pattern matching that unwraps union contents
+- Exhaustiveness checking in switch expressions
+- Enhanced nullability tracking
+
+### Relationship to This Proposal
+
+This proposal leaves type unions unchanged. Enhanced enums are built independently, though both features share conceptual ground in making C#'s type system more expressive. Where unions excel at "or" relationships between types, enhanced enums excel at modeling variants within a single type.
+
+## 4. Enhanced Enums
+
+### Design Principles
+
+Enhanced enums follow these core principles:
+
+- **Progressive enhancement**: Simple enums stay simple; complexity is opt-in
+- **Exhaustiveness**: The compiler knows all possible cases
+- **Type safety**: Each case's data is strongly typed
+- **Familiar syntax**: Builds on existing enum concepts
+
+### Syntax Extensions
+
+Enhanced enums extend the traditional enum syntax in three orthogonal ways:
+
+#### Extended Base Types
+
+Traditional enums only support integral types. Enhanced enums support any constant-bearing type:
+
+```csharp
+enum Traditional : int { A = 1, B = 2 }
+enum Extended : string { Active = "active", Inactive = "inactive" }
+enum Extended : double { Pi = 3.14159, E = 2.71828 }
+```
+
+#### Shape Declarations
+
+A shape enum (ADT) is created by EITHER:
+- Adding `class` or `struct` after `enum`, OR (inclusive)  
+- Having a parameter list on any enum member
+
+```csharp
+enum class Result { Success, Failure }  // shape enum via 'class' keyword
+enum struct Result { Success, Failure } // shape enum via 'struct' keyword
+enum Result { Success(), Failure() }    // shape enum via parameter lists
+```
+
+When created via parameter lists alone, it defaults to `enum class` (reference type):
+
+```csharp
+enum Result { Ok(int value), Error }    // implicitly 'enum class'
+// equivalent to:
+enum class Result { Ok(int value), Error }
+```
+
+#### Data-Carrying Cases
+
+Shape enum members can have parameter lists to carry data:
+
+```csharp
+enum Result
 {
-    int,
-    string;
+    Success(string id),
+    Failure(int code, string message)
+}
+```
 
-    public bool IsValue()
+#### Combination Rules
+
+- **Constant enums**: Can use extended base types but NOT have parameter lists.
+- **Shape enums**: Can have parameter lists but NOT specify a base type
+- **Mixing cases**: Cannot mix constant values and parameterized cases in the same enum
+
+```csharp
+// ✓ Valid - constant enum with string base
+enum Status : string { Active = "A", Inactive = "I" }
+
+// ✓ Valid - shape enum with data
+enum class Result { Ok(int value), Error(string msg) }
+
+// ✗ Invalid - cannot mix constants and shapes
+enum Bad { A = 1, B(string x) }
+
+// ✗ Invalid - shape enums cannot have base types
+enum struct Bad : int { A, B }
+```
+
+For the complete formal grammar specification, see [Appendix A: Grammar Changes](#appendix-a-grammar-changes).
+
+### Constant Value Enums
+
+Enhanced constant enums extend traditional enums to support any primitive type that can have compile-time constants:
+
+```csharp
+enum Priority : string 
+{
+    Low = "low",
+    Medium = "medium", 
+    High = "high"
+}
+
+enum MathConstants : double
+{
+    Pi = 3.14159265359,
+    E = 2.71828182846,
+    GoldenRatio = 1.61803398875
+}
+```
+
+These compile to subclasses of `System.Enum` with the appropriate backing field `value__` with the appropriate underlying type. Unlike integral enums, non-integral constant enums require explicit values for each member.
+
+### 4.4 Shape Enums
+
+Shape enums are C#'s implementation of algebraic data types, allowing each case to carry different data.
+
+#### 4.4.1 Basic Shape Declarations
+
+Shape enums can mix cases with and without data:
+
+```csharp
+enum FileOperation
+{
+    Open(string path),
+    Close,
+    Read(byte[] buffer, int offset, int count),
+    Write(byte[] buffer)
+}
+```
+
+Each case defines a constructor pattern. Cases without parameter lists are singletons, while cases with parameters create new instances.
+
+#### 4.4.2 Reference vs Value Semantics
+
+**`enum class`** creates reference-type enums, stored on the heap:
+
+```csharp
+enum class WebResponse
+{
+    Success(string content),
+    Error(int statusCode, string message),
+    Timeout
+}
+```
+
+Benefits:
+- Cheap to pass around (pointer-sized)
+- No risk of struct tearing
+- Natural null representation
+
+**`enum struct`** creates value-type enums, optimized for stack storage:
+
+```csharp
+enum struct Option<T>
+{
+    None,
+    Some(T value)
+}
+```
+
+Benefits:
+- No heap allocation
+- Better cache locality
+- Reduced GC pressure
+
+#### 4.4.3 Members and Methods
+
+Enhanced enums can contain members just like unions:
+
+```csharp
+enum class Result<T>
+{
+    Success(T value),
+    Error(string message);
+    
+    public bool IsSuccess => this switch 
     {
-        return this switch { ... };
+        Success(_) => true,
+        _ => false
+    };
+    
+    public T GetValueOrDefault(T defaultValue) => this switch
+    {
+        Success(var value) => value,
+        _ => defaultValue
+    };
+}
+```
+
+Members are restricted to:
+- Methods and properties (no additional state)
+- Static members
+- Nested types
+
+## 5. Pattern Matching
+
+### 5.1 Enhanced Enum Patterns
+
+Enhanced enums support natural pattern matching syntax:
+
+```csharp
+var message = operation switch
+{
+    Open(var path) => $"Opening {path}",
+    Close => "Closing file",
+    Read(_, var offset, var count) => $"Reading {count} bytes at {offset}",
+    Write(var buffer) => $"Writing {buffer.Length} bytes"
+};
+```
+
+The compiler understands the structure of each case and provides appropriate deconstruction.
+
+### 5.2 Exhaustiveness
+
+Switch expressions over enhanced enums are exhaustive when all cases are handled:
+
+```csharp
+enum Status { Active, Pending(DateTime since), Inactive }
+
+// Compiler knows this is exhaustive - no default needed
+var description = status switch
+{
+    Active => "Currently active",
+    Pending(var date) => $"Pending since {date}",
+    Inactive => "Not active"
+};
+```
+
+### 5.3 Comparison with Union Patterns
+
+Enhanced enums and type unions have different pattern matching behaviors:
+
+```csharp
+// Union - patterns apply to the contained type
+union Animal { Dog, Cat }
+var sound = animal switch
+{
+    Dog d => d.Bark(),    // Matches the Dog inside the union
+    Cat c => c.Meow()     // Matches the Cat inside the union
+};
+
+// Enhanced enum - patterns match the enum's cases
+enum Animal { Dog(string name), Cat(int lives) }
+var description = animal switch  
+{
+    Dog(var name) => $"Dog named {name}",  // Matches the Dog case
+    Cat(var lives) => $"Cat with {lives} lives"  // Matches the Cat case
+};
+```
+
+## 6. Translation Strategies
+
+### 6.1 `enum class` Implementation
+
+Shape enums declared with `enum class` translate to abstract base classes with nested record types:
+
+```csharp
+enum class Result
+{
+    Success(string value),
+    Failure(int code)
+}
+
+// Translates to approximately:
+abstract class Result : System.Enum
+{
+    private Result() { }
+    
+    public sealed record Success(string value) : Result;
+    public sealed record Failure(int code) : Result;
+}
+```
+
+Singleton cases (those without parameters) use a shared instance:
+
+```csharp
+enum class State { Ready, Processing, Complete }
+
+// Translates to approximately:
+abstract class State : System.Enum
+{
+    private State() { }
+    
+    public sealed class Ready : State 
+    {
+        public static readonly State Instance = new Ready();
+        private Ready() { }
+    }
+    // Similar for Processing and Complete
+}
+```
+
+### 6.2 `enum struct` Implementation
+
+Shape enums declared with `enum struct` use a layout-optimized struct approach:
+
+```csharp
+enum struct Option<T>
+{
+    None,
+    Some(T value)
+}
+
+// Translates to approximately:
+struct Option<T> : System.Enum
+{
+    private byte _discriminant;
+    private T _value;
+    
+    public bool IsNone => _discriminant == 0;
+    public bool IsSome => _discriminant == 1;
+    
+    public T GetSome() 
+    {
+        if (_discriminant != 1) throw new InvalidOperationException();
+        return _value;
     }
 }
 ```
 
-And that unions have a way to define their own types, avoiding the need to clutter the outer namespace:
+For complex cases with multiple fields of different types, the compiler employs union-like storage optimization:
 
-```c#
-union StateMachine
+```csharp
+enum struct Message
 {
-    StartState,
-    InProgress,
-    Completed,
+    Text(string content),
+    Binary(byte[] data, int length),
+    Error(int code, string message)
+}
 
-    public record StartState(...) { ... }
-    public record InProgress(...) { ... }
-    public record Completed(...) { ... }
+// Uses overlapping storage for fields, minimizing struct size
+```
+
+## 7. Examples and Use Cases
+
+### 7.1 Migrating Traditional Enums
+
+Traditional enums can be progressively enhanced:
+
+```csharp
+// Step 1: Traditional enum
+enum OrderStatus { Pending = 1, Processing = 2, Shipped = 3, Delivered = 4 }
+
+// Step 2: Add data to specific states
+enum OrderStatus
+{
+    Pending,
+    Processing(DateTime startedAt),
+    Shipped(string trackingNumber),
+    Delivered(DateTime deliveredAt)
+}
+
+// Step 3: Add methods for common operations
+enum OrderStatus
+{
+    Pending,
+    Processing(DateTime startedAt),
+    Shipped(string trackingNumber),
+    Delivered(DateTime deliveredAt);
+    
+    public bool IsComplete => this switch
+    {
+        Delivered(_) => true,
+        _ => false
+    };
 }
 ```
 
-Importantly, there is no shorthand in a union to both declare a new type, and make that type part of the types of the union itself.
+### 7.2 Result and Option Types
 
-## Future continuation
+Enhanced enums make functional patterns natural:
 
-Unions solve the problem of being able to represent a value with a finite set of types well.  However, they are not ideal when for all use cases.  In some domains it is preferable to instead have a single type, with a set of rich cases (i.e. 'shapes') that an instance of that type could be.  This is commonly known as an 'algebraic data type'.  C# already has a poor-man's form of this with 'enums'.  But our current enums come with several major drawbacks.
+```csharp
+enum class Result<T, E>
+{
+    Ok(T value),
+    Error(E error);
+    
+    public Result<U, E> Map<U>(Func<T, U> mapper) => this switch
+    {
+        Ok(var value) => new Ok(mapper(value)),
+        Error(var err) => new Error(err)
+    };
+}
 
-1. They cannot represent information more interesting than an integral value.
-2. They are not exhaustive on the total set of values you may actually run into at runtime.
+enum struct Option<T>
+{
+    None,
+    Some(T value);
+    
+    public T GetOrDefault(T defaultValue) => this switch
+    {
+        Some(var value) => value,
+        None => defaultValue
+    };
+}
+```
 
-In other words, they work well in domains where one wants to model things as a (possibly open ended) set of named integral values.  But are not very useful beyond that.
+### 7.3 State Machines
 
-While 'Unions' has experimented with solutions for this, the problem spaces seem quite different.  One is for bringing a disparate set of types together.  One is for providing a disparate set of shapes for a particular type.
+Enhanced enums excel at modeling state machines with associated state data:
 
-To that end, to solve the latter need, this proposal recomends keeping Unions the same as currently proposed, while heavily investing on expanding existing `enums` to support this space.
+```csharp
+enum class ConnectionState
+{
+    Disconnected,
+    Connecting(DateTime attemptStarted, int attemptNumber),
+    Connected(IPEndPoint endpoint, DateTime connectedAt),
+    Reconnecting(IPEndPoint lastEndpoint, int retryCount, DateTime nextRetryAt),
+    Failed(string reason, Exception exception);
+    
+    public ConnectionState HandleTimeout() => this switch
+    {
+        Connecting(var started, var attempts) when attempts < 3 => 
+            new Reconnecting(null, attempts + 1, DateTime.Now.AddSeconds(Math.Pow(2, attempts))),
+        Connecting(_, _) => 
+            new Failed("Connection timeout", new TimeoutException()),
+        Connected(var endpoint, _) => 
+            new Reconnecting(endpoint, 1, DateTime.Now.AddSeconds(1)),
+        _ => this
+    };
+}
+```
 
-### Syntactic expansion
+## 8. Design Decisions and Trade-offs
 
-Syntactically, the proposal suggests:
+### 8.1 Why Extend `enum`
 
-```diff
+Extending the existing `enum` keyword rather than introducing new syntax provides several benefits:
+
+- **Familiarity**: Developers already understand enums conceptually
+- **Progressive disclosure**: Simple cases remain simple
+- **Cognitive load**: One concept (enums) instead of two (enums + ADTs)
+- **Migration path**: Existing enums can be enhanced incrementally
+
+### 8.2 Member Restrictions
+
+Enhanced enums cannot add instance fields or auto-properties because:
+
+- The compiler manages storage layout for optimal memory usage
+- Adding fields would break the closed-world assumption
+- Pattern matching exhaustiveness depends on knowing all possible states
+
+Static members and methods that operate on the existing state are permitted.
+
+### 8.3 Open Questions
+
+Several design decisions remain open:
+
+- **Case type accessibility**: Can users reference the generated nested types directly, or should they remain compiler-only?
+- **Partial enums**: Should enhanced enums support `partial` for source generators?
+- **Default values**: What should `default(EnumType)` produce for shape enums?
+- **Serialization**: How should enhanced enums interact with System.Text.Json and other serializers?
+
+## 9. Performance Characteristics
+
+### Memory Layout
+
+**`enum class`**:
+- Single pointer per instance (8 bytes on 64-bit)
+- Heap allocation for each unique case instance
+- Singleton pattern for parameter-less cases
+
+**`enum struct`**:
+- Size equals discriminant (typically 1-4 bytes) plus largest case data
+- Stack allocated or embedded in containing types
+- Potential for struct tearing with concurrent access
+
+### Allocation Patterns
+
+```csharp
+// Allocation per call
+enum class Result { Ok(int value), Error(string message) }
+var r1 = new Ok(42);  // Heap allocation
+
+// No allocation
+enum struct Result { Ok(int value), Error(string message) }  
+var r2 = new Ok(42);  // Stack only
+```
+
+### Optimization Opportunities
+
+The compiler can optimize:
+- Singleton cases to shared instances
+- Small enum structs to fit in registers
+- Pattern matching to jump tables
+- Exhaustive switches to avoid default branches
+
+## 10. Runtime Representation
+
+Enhanced enums map to CLR types as follows:
+
+### Constant Enums
+- Subclass `System.Enum` with appropriate backing field
+- Metadata preserves enum semantics for reflection
+- Compatible with existing enum APIs
+
+### Shape Enums
+- **`enum class`**: Abstract class hierarchy with sealed nested classes
+- **`enum struct`**: Struct with discriminant and union-style storage
+- Custom attributes mark these as compiler-generated enhanced enums
+
+### Interop Considerations
+
+Enhanced enums maintain compatibility with:
+- Existing `System.Enum` APIs where applicable
+- Reflection-based frameworks
+- Debugger visualization
+- Binary serialization (with caveats for shape enums)
+
+## Appendix A: Grammar Changes
+
+```antlr
 enum_declaration
--    : attributes? enum_modifier* 'enum' identifier enum_base? enum_body ';'?
-+    : attributes? enum_modifier* 'enum' ('struct' | 'class')? identifier enum_base? enum_body ';'?
+    : attributes? enum_modifier* 'enum' enum_kind? identifier enum_base? enum_body ';'?
+    ;
+
+enum_kind
+    : 'class'
+    | 'struct'
     ;
 
 enum_base
--    : ':' integral_type
--    | ':' integral_type_name
-+    : ':' enum_simple_type
-+    | ':' enum_primitive_type_name
+    : ':' enum_underlying_type
     ;
 
-+ enum_simple_type
-+    : simple_type | 'string' // All the primitive types that can have constant values
-+    | type_name // Must resolve to any of the primitive types above.
-+    ;
+enum_underlying_type
+    : integral_type
+    | 'bool'
+    | 'char' 
+    | 'float'
+    | 'double'
+    | 'decimal'
+    | 'string'
+    | type_name  // Must resolve to one of the above
+    ;
 
 enum_body
--    : '{' enum_member_declarations ',' '}'
-+   : '{' enum_member_declarations ',' (';' struct_member_declaration*)? '}'
+    : '{' enum_member_declarations? '}'
+    | '{' enum_member_declarations ';' class_member_declarations '}'
+    ;
+
+enum_member_declarations
+    : enum_member_declaration (',' enum_member_declaration)*
     ;
 
 enum_member_declaration
--    : attributes? identifier ('=' constant_expression)?
-+    : enum_constant_value_declaration
-+    | enum_shape_value_declaration
+    : attributes? identifier enum_member_initializer?
     ;
 
-+ enum_constant_value_declaration
-+    : attributes? identifier ('=' constant_expression)?
-+    ;
+enum_member_initializer
+    : '=' constant_expression
+    | parameter_list
+    ;
 
-+ enum_shape_value_declaration
-+    : identifier parameter_list?
-+    ;
+parameter_list
+    : '(' (parameter (',' parameter)*)? ')'
+    ;
+
+parameter
+    : type identifier
+    ;
 ```
-
-## Detailed discussion
-
-### Enum constant value declarations
-
-First, this proposal expands primitive enums to support more than just named integral constant values.  If provided, the `enum_base` can be any C# type that we allow constants for (excluding the trivial `object + null` pairing).
-
-Existing enums would retain their current meaning.  Being an integral backed set of values, which monotonically increase by 1 across each value (resetting if an explicit constant is provided).
-
-Using new `enum_simple_types` (like `double`, `string`, `char`, `bool`, etc.) would require the presence of the `= constant_expression` on the individual declarations.
-
-These constant valued enums would compile down to an  value type subclass of `System.Enum`, except with a backing `value__` field of the corrending `enum_simple_type`. 
-
-### Enum shape declarations
-
-The presence of `('struct' | 'class')` after the enum identifier *or* the presence of at least one `enum_shape_value_declaration` makes the `enum` a modern `enum shape`.  It is not legal to mix `enum_shape_value_declaration` and `enum_constant_value_declaration` (those with a constant initializer) in the same `enum_declaration`.
-
-If the enum does not have `('struct' | 'class')`, but does have at least one `enum_shape_value_declaration` then it is equivalent to `enum class` (similar to how `record` is equivalent to `record class`).
-
-An `enum shape` defines a set of constructors (and thus corresponding deconstructors) for the enum, explicitly enumerating the set of legal values the enum can have.  For example, all of the following are equivalent:
-
-```c#
-// 'class' forces this to be an enum shape.
-enum class Gate { Locked, Closed } 
-
-// Presence of parameter lists forces this to be an enum shape
-enum Gate { Locked(), Closed() }
-```
-
-Note: it is fine to not have parameter lists on all elements in an `enum shape`, as long as *either* at least one declaration does have a parameter list *or* `'class' | 'struct'` is specified.  So the following is also allowed:
-
-```c#
-enum Gate { Locked, Closed, Open(float percentage) }
-```
-
-This proposal recomends that if `unions` can have members, that `enum` be allowed to have members in a similar fashion.  Note: these members would likely be restricted to either statics, or the set of instance members that do not introduce new instance state.  So no instance fields, auto-properties, etc.
-
-### Enum shape translation
-
-#### `enum class`
-
-An `enum class` specifies that the enum type itself, and then the individual cases be reference types.  This would have the benefit of these enum instances being passable just as a pointer to the instantiated value on the heap, with the downside of those heap allocations.
-
-```c#
-enum class Gate
-{
-    Locked,
-    Open(DateTime openedAt);
-}
-
-// would translate to:
-
-abstract class Gate : System.Enum
-{
-    private Gate() { }
-
-    public sealed record Locked : Gate
-    {
-        public static readonly Gate Instance = new Locked();
-    }
-
-    public sealed record Open(DateTime openedAt) : Gate;
-}
-```
-
-Notes: While there are actual types generated for the individual cases, it is unclear if users would be allowed to reference these types directly.  A way to avoid this could be to emit them with unspeakable names that the compiler translated between.
-
-With records, there woudl also be a natural place to put value-specific members *if* we allow them to be declared with the value declaration itself in the enum.
-
-#### `enum struct`
-
-While the above translation works sensibly, it may not be desirable for consumers who wish to avoid hitting the heap as much as possible.  To that end, `enum struct` produces a struct based layout aimed at the lowest space overhead on the stack.
-
-For example:
-
-```c#
-enum struct X
-{
-    Locked,
-    Open(DateTime openedAt, int x);
-    Closed(string reason, int y);
-    Other(object reason, List<int> x, int y);
-}
-
-// Would translate to:
-
-struct X : System.Enum
-{
-    private int __discriminant;
-
-    // Largest space needed for all unmanaged fields
-    // in the largest possible value.  In this case
-    // space for DateTime+int in 'Open'
-    unmanaged_data<size> unmanaged_data;
-
-    // space for all reference fields in value with the most reference fields, in this case 'reason+x' in Other
-    object referenceField1, object referenceField2;
-
-    bool IsOpen => __discriminant == 1;
-    public (DateTime openedAt, int x) GetOpen()
-    {
-        // throw if wrong type
-        return // reinterpret unamanged data appropriately.
-    }
-
-    // etc.
-}
-```
-

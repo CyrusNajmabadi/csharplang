@@ -388,7 +388,7 @@ enum struct Message
 
 ## 7. Examples and Use Cases
 
-### 7.1 Migrating Traditional Enums
+### Migrating Traditional Enums
 
 Traditional enums can be progressively enhanced:
 

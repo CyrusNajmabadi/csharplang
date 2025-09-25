@@ -281,7 +281,7 @@ var description = status switch
 };
 ```
 
-### 5.3 Comparison with Union Patterns
+### Comparison with Union Patterns
 
 Enhanced enums and type unions have different pattern matching behaviors:
 

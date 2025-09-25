@@ -57,4 +57,53 @@ In other words, they work well in domains where one wants to model things as a (
 
 While 'Unions' has experimented with solutions for this, the problem spaces seem quite different.  One is for bringing a disparate set of types together.  One is for providing a disparate set of shapes for a particular type.
 
-To that end, to solve the latter need, this proposal recomends 
+To that end, to solve the latter need, this proposal recomends keeping Unions the same as currently proposed, while heavily investing on expanding existing `enums` to support this space.
+
+### Syntactic expansion
+
+Syntactically, the proposal suggests:
+
+```diff
+enum_declaration
+-    : attributes? enum_modifier* 'enum' identifier enum_base? enum_body ';'?
++    : attributes? enum_modifier* 'enum' ('struct' | 'class')? identifier enum_base? enum_body ';'?
+    ;
+
+enum_base
+-    : ':' integral_type
+-    | ':' integral_type_name
++    : ':' enum_simple_type
++    | ':' enum_primitive_type_name
+    ;
+
++ enum_simple_type
++    : simple_type | 'string' // All the primitive types that can have constant values
++    | type_name // Must resolve to any of the primitive types above.
++    ;
+
+enum_body
+    : '{' enum_member_declarations? '}'
+    | '{' enum_member_declarations ',' '}'
+    ;
+
+enum_member_declaration
+-    : attributes? identifier ('=' constant_expression)?
++    : enum_constant_value_declaration
++    | enum_shape_value_declaration
+    ;
+
++ enum_constant_value_declaration
++    : attributes? identifier ('=' constant_expression)?
++    ;
+
+
++
++    | identifier type_parameter_list? parameter_list? record_base? type_parameter_constraints_clause* record_body
+    ;
+```
+
+## Detailed discussion
+
+First, this proposal expands primitive enums to support more than just named integral constant values.  If provided, the `enum_base` can be any C# type that we allow constants for (excluding the trivial `object + null` pairing).
+
+More interesting though is that this expansion allows for the following 

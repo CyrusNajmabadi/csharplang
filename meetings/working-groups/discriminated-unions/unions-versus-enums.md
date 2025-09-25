@@ -305,7 +305,7 @@ var description = animal switch
 
 ## 6. Translation Strategies
 
-### 6.1 `enum class` Implementation
+### `enum class` Implementation
 
 Shape enums declared with `enum class` translate to abstract base classes with nested record types:
 

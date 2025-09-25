@@ -265,7 +265,7 @@ var message = operation switch
 
 The compiler understands the structure of each case and provides appropriate deconstruction.
 
-### 5.2 Exhaustiveness
+### Exhaustiveness
 
 Switch expressions over enhanced enums are exhaustive when all cases are handled:
 

@@ -111,7 +111,7 @@ Existing enums would retain their current meaning.  Being an integral backed set
 
 Using new `enum_simple_types` (like `double`, `string`, `char`, `bool`, etc.) would require the presence of the `= constant_expression` on the individual declarations.
 
-These constant valued enums would compile down to an  value type subclass of `System.Enum`, except with a backing `_value` field 
+These constant valued enums would compile down to an  value type subclass of `System.Enum`, except with a backing `value__` field of the corrending `enum_simple_type`. 
 
 ### Enum shape declarations
 

@@ -165,11 +165,11 @@ enum MathConstants : double
 
 These compile to subclasses of `System.Enum` with the appropriate backing field `value__` with the appropriate underlying type. Unlike integral enums, non-integral constant enums require explicit values for each member.
 
-### 4.4 Shape Enums
+### Shape Enums
 
 Shape enums are C#'s implementation of algebraic data types, allowing each case to carry different data.
 
-#### 4.4.1 Basic Shape Declarations
+#### Basic Shape Declarations
 
 Shape enums can mix cases with and without data:
 
@@ -183,9 +183,9 @@ enum FileOperation
 }
 ```
 
-Each case defines a constructor pattern. Cases without parameter lists are singletons, while cases with parameters create new instances.
+Each case defines a constructor (and corresponding destructor) pattern. Cases without parameter lists are singletons, while cases with parameters create new instances.
 
-#### 4.4.2 Reference vs Value Semantics
+#### Reference vs Value Semantics
 
 **`enum class`** creates reference-type enums, stored on the heap:
 

@@ -488,25 +488,6 @@ Extending the existing `enum` keyword rather than introducing new syntax provide
 - **Cognitive load**: One concept (enums) instead of two (enums + ADTs)
 - **Migration path**: Existing enums can be enhanced incrementally
 
-### Member Restrictions
-
-Enhanced enums cannot add instance fields or auto-properties because:
-
-- The compiler manages storage layout for optimal memory usage
-- Adding fields would break the closed-world assumption
-- Pattern matching exhaustiveness depends on knowing all possible states
-
-Static members and methods that operate on the existing state are permitted.
-
-### 8.3 Open Questions
-
-Several design decisions remain open:
-
-- **Case type accessibility**: Can users reference the generated nested types directly, or should they remain compiler-only?
-- **Partial enums**: Should enhanced enums support `partial` for source generators?
-- **Default values**: What should `default(EnumType)` produce for shape enums?
-- **Serialization**: How should enhanced enums interact with System.Text.Json and other serializers?
-
 ## 9. Performance Characteristics
 
 ### Memory Layout
@@ -562,6 +543,15 @@ Enhanced enums maintain compatibility with:
 - Reflection-based frameworks
 - Debugger visualization
 - Binary serialization (with caveats for shape enums)
+
+### 10. Open Questions
+
+Several design decisions remain open:
+
+- **Case type accessibility**: Can users reference the generated nested types directly, or should they remain compiler-only?
+- **Partial enums**: Should enhanced enums support `partial` for source generators?
+- **Default values**: What should `default(EnumType)` produce for shape enums?
+- **Serialization**: How should enhanced enums interact with System.Text.Json and other serializers?
 
 ## Appendix A: Grammar Changes
 

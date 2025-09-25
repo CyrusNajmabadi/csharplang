@@ -49,7 +49,7 @@ Enhanced enums address all these limitations while preserving the conceptual sim
 
 By extending the existing `enum` keyword rather than introducing entirely new syntax, enhanced enums provide progressive disclosure. Simple enums remain simple, while advanced scenarios become possible without abandoning familiar patterns.
 
-## 3. Type Unions (Brief Context)
+## 3. Type Unions (Brief Overview)
 
 ### Core Concepts
 
@@ -596,13 +596,5 @@ enum_member_declaration
 enum_member_initializer
     : '=' constant_expression
     | parameter_list
-    ;
-
-parameter_list
-    : '(' (parameter (',' parameter)*)? ')'
-    ;
-
-parameter
-    : type identifier
     ;
 ```

@@ -103,6 +103,20 @@ enum_member_declaration
 
 ## Detailed discussion
 
+### Enum constant value declarations
+
 First, this proposal expands primitive enums to support more than just named integral constant values.  If provided, the `enum_base` can be any C# type that we allow constants for (excluding the trivial `object + null` pairing).
+
+Existing enums would retain their current meaning.  Being an integral backed set of values, which monotonically increase by 1 across each value (resetting if an explicit constant is provided).
+
+Using new `enum_simple_types` (like `double`, `string`, `char`, `bool`, etc.) would require the presence of the `= constant_expression` on the individual declarations.
+
+These constant valued enums would compile down to an  value type subclass of `System.Enum`, except with a backing `_value` field 
+
+### Enum shape declarations
+
+The presence of `('struct' | 'class')` after the enum identifier *or* the presence of at least one `enum_shape_value_declaration` makes the `enum` a modern `enum shape`.  It is not legal to mix `enum_shape_value_declaration` and `enum_constant_value_declaration` in the same `enum_declaration`.
+
+
 
 More interesting though is that this expansion allows for the following 

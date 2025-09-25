@@ -2,7 +2,48 @@
 
 This proposal aims to separate out two related union-esque concepts that have been discussed for quite some time.  Instead of a single language feature that attempts to unify them into one construct, an approach is taken to keep them separated, though with one built on top of the other.
 
+## Simple examples:
+
 Unions would look something like:
+
+```c#
+union X { int, string, ... remaining *existing* types ... }
+```
+
+Enums would look like:
+
+```c#
+enum X
+{
+    Value1,
+    Value2,
+    Value3(int x, string y, bool z),
+}
+```
+
+## Complex examples:
+
+Members allowed in both unions and enums:
+
+```c#
+union X
+{
+    int, string;
+    
+    public bool IsValid => this switch { ... }
+}
+
+
+```c#
+enum X
+{
+    Value1,
+    Value2,
+    Value3(int x, string y, bool z);
+    
+    public bool IsValid => this switch { ... }
+}
+```
 
 ## Starting point
 

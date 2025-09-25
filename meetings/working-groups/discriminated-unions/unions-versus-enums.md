@@ -2,6 +2,8 @@
 
 This proposal aims to separate out two related union-esque concepts that have been discussed for quite some time.  Instead of a single language feature that attempts to unify them into one construct, an approach is taken to keep them separated, though with one built on top of the other.
 
+Unions would look something like:
+
 ## Starting point
 
 This proposal builds off of the current [Unions](https://github.com/dotnet/csharplang/blob/38fd5f33d285cb190268f98cea16223cc0a5b8bc/proposals/unions.md) proposal, leaving it virtually unchanged.  Importantly, it maintains the view that a `Union` is effectively just a way of specifying the set of `Types` that a value could be.  The exact syntax of to define a `Union` is not important to this proposal.  But, for the purposes of discussion is presumed to be something like:
@@ -82,8 +84,8 @@ enum_base
 +    ;
 
 enum_body
-    : '{' enum_member_declarations? '}'
-    | '{' enum_member_declarations ',' '}'
+-    : '{' enum_member_declarations ',' '}'
++   : '{' enum_member_declarations ',' (';' struct_member_declaration*)? '}'
     ;
 
 enum_member_declaration
@@ -97,7 +99,7 @@ enum_member_declaration
 +    ;
 
 + enum_shape_value_declaration
-+    : identifier type_parameter_list? parameter_list? record_base? type_parameter_constraints_clause* record_body
++    : identifier parameter_list?
 +    ;
 ```
 
@@ -115,8 +117,25 @@ These constant valued enums would compile down to an  value type subclass of `Sy
 
 ### Enum shape declarations
 
-The presence of `('struct' | 'class')` after the enum identifier *or* the presence of at least one `enum_shape_value_declaration` makes the `enum` a modern `enum shape`.  It is not legal to mix `enum_shape_value_declaration` and `enum_constant_value_declaration` in the same `enum_declaration`.
+The presence of `('struct' | 'class')` after the enum identifier *or* the presence of at least one `enum_shape_value_declaration` makes the `enum` a modern `enum shape`.  It is not legal to mix `enum_shape_value_declaration` and `enum_constant_value_declaration` (those with a constant initializer) in the same `enum_declaration`.
 
+If the enum does not have `('struct' | 'class')`, but does have at least one `enum_shape_value_declaration` then it is equivalent to `enum class` (similar to how `record` is equivalent to `record class`).
 
+An `enum shape` defines a set of constructors (and thus corresponding deconstructors) for the enum, explicitly enumerating the set of legal values the enum can have.  For example, all of the following are equivalent:
 
-More interesting though is that this expansion allows for the following 
+```c#
+// 'class' forces this to be an enum shape.
+enum class Gate { Locked, Closed } 
+
+// Presence of parameter lists forces this to be an enum shape
+enum Gate { Locked(), Closed() }
+```
+
+Note: it is fine to not have parameter lists on all elements in an `enum shape`, as long as *either* at least one declaration does have a parameter list *or* `'class' | 'struct'` is specified.  So the following is also allowed:
+
+```c#
+enum Gate { Locked, Closed, Open(float percentage) }
+```
+
+This proposal recomends that if `unions` can have members, that `enum` be allowed to have members in a similar fashion.  Note: these members would likely be restricted to either statics, or the set of instance members that do not introduce new instance state.  So no instance fields, auto-properties, etc.
+

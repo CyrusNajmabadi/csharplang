@@ -23,73 +23,71 @@ This proposal aims to separate out two related union-esque concepts that have be
 
 ## Complex examples:
 
-Members allowed in both unions and enums:
+1. Members allowed in both unions and enums:
 
-```c#
-union X
-{
-    int, string;
-    
-    public bool IsValid => this switch { ... }
-}
-
-
-```c#
-enum Y
-{
-    Value1,
-    Value2,
-    Value3(int x, string y, bool z);
-    
-    public bool IsValid => this switch { ... }
-}
-```
-
-Complex enums can be both reference types or value types:
-
-```c#
-enum class Y // same as `enum Y
-{
-    Value1,
-    Value2,
-    Value3(int x, string y, bool z);
-}
-
-// or
-
-enum struct Y
-{
-    Value1,
-    Value2,
-    Value3(int x, string y, bool z);   
-}
-```
-
-`enum class` opts for emitting as a reference type, with values on the heap.  `enum struct` opts for emitting as a value type, optimized for size.
+    ```c#
+    union X
+    {
+        int, string;
+        
+        public bool IsValid => this switch { ... }
+    }
 
 
-Both support pattern matching in intuitive fashions:
+    ```c#
+    enum Y
+    {
+        Value1,
+        Value2,
+        Value3(int x, string y, bool z);
+        
+        public bool IsValid => this switch { ... }
+    }
+    ```
 
-```c#
-// unions
-x switch 
-{
-    int => ...,
-    string s => ...
-}
+2. Complex enums can be both reference types or value types:
 
-// enums
-y switch
-{
-    Value1 => ...
-    Value2 v2 => ...
-    Value3(var x, _, true) => ...
-}
-```
+    ```c#
+    enum class Y // same as `enum Y
+    {
+        Value1,
+        Value2,
+        Value3(int x, string y, bool z);
+    }
 
-Note: as enum members are not types themselves, introduced variables (like 'v2') do not have a narrowed type.  Though, if we allow for members to be declared *within* a particular enum member itself, then those members could then be made available on those particular narrowed values.
+    // or
+
+    enum struct Y
+    {
+        Value1,
+        Value2,
+        Value3(int x, string y, bool z);   
+    }
+    ```
+
+    `enum class` opts for emitting as a reference type, with values on the heap.  `enum struct` opts for emitting as a value type, optimized for size.
 
 
+3. Both support pattern matching in intuitive fashions:
+
+    ```c#
+    // unions
+    x switch 
+    {
+        int => ...,
+        string s => ...
+    }
+
+    // enums
+    y switch
+    {
+        Value1 => ...
+        Value2 v2 => ...
+        Value3(var x, _, true) => ...
+    }
+    ```
+
+    Note: as enum members are not types themselves, introduced variables (like 'v2') do not have a narrowed type.  Though, if we allow for members to be declared *within* a particular enum member itself, then those members could then be made available on those particular narrowed values.
 
 ## Starting point
 

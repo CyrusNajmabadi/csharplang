@@ -488,7 +488,7 @@ Extending the existing `enum` keyword rather than introducing new syntax provide
 - **Cognitive load**: One concept (enums) instead of two (enums + ADTs)
 - **Migration path**: Existing enums can be enhanced incrementally
 
-### 8.2 Member Restrictions
+### Member Restrictions
 
 Enhanced enums cannot add instance fields or auto-properties because:
 

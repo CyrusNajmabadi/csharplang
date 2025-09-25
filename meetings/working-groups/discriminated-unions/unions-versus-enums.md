@@ -345,7 +345,7 @@ abstract class State : System.Enum
 }
 ```
 
-### 6.2 `enum struct` Implementation
+### `enum struct` Implementation
 
 Shape enums declared with `enum struct` use a layout-optimized struct approach:
 

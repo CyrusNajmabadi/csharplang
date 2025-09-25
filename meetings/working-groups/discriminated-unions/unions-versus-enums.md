@@ -479,7 +479,7 @@ enum class ConnectionState
 
 ## 8. Design Decisions and Trade-offs
 
-### 8.1 Why Extend `enum`
+### Why Extend `enum`
 
 Extending the existing `enum` keyword rather than introducing new syntax provides several benefits:
 

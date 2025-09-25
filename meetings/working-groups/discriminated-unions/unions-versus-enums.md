@@ -451,7 +451,7 @@ enum struct Option<T>
 }
 ```
 
-### 7.3 State Machines
+### State Machines
 
 Enhanced enums excel at modeling state machines with associated state data:
 

@@ -421,7 +421,7 @@ enum OrderStatus
 }
 ```
 
-### 7.2 Result and Option Types
+### Result and Option Types
 
 Enhanced enums make functional patterns natural:
 

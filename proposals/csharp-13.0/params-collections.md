@@ -2,6 +2,8 @@
 
 [!INCLUDE[Specletdisclaimer](../speclet-disclaimer.md)]
 
+Champion issue: <https://github.com/dotnet/csharplang/issues/7700>
+
 ## Summary
 
 In C# 12 language added support for creating instances of collection types beyond just arrays.
@@ -16,7 +18,7 @@ convenience when calling APIs that take other collection types. For example, an 
 plain `IEnumerable`. Especially in cases when compiler is able to avoid an implicit array allocation for the purpose of
 creating the collection (`ImmutableArray<T>`, `ReadOnlySpan<T>`, etc).
 
-Today, in situations when an API takes a collection type, developers usually add `params` overload that takes an array,
+Today, in situations when an API takes a collection type, developers usually add a `params` overload that takes an array,
 construct the target collection and call the original overload with that collection, thus consumers of the API have to
 trade an extra array allocation for convenience.
 
@@ -54,7 +56,7 @@ The *type* of a parameter collection shall be one of the following valid target 
   - `System.Span<T>`
   - `System.ReadOnlySpan<T>`  
   in which cases the *element type* is `T`
-- A *type* with an appropriate *[create method](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-12.0/collection-expressions.md#create-methods)*,
+- A *type* with an appropriate *[create method](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-12.0/collection-expressions.md#create-methods)* that can be invoked with no additional arguments,
   which is at least as accessible as the declaring member, and with a corresponding *element type* resulting from that determination
 - A *struct* or *class type* that implements `System.Collections.IEnumerable` where:
   - The *type* has a constructor that can be invoked with no arguments, and the constructor is at least as accessible as the declaring member.
@@ -366,7 +368,7 @@ The order of evaluation is the following:
 3. `GetA` is called
 4. `Test` is called
 
-Note, in params array case, the array is created right before the target methos is invoked, after all
+Note, in params array case, the array is created right before the target method is invoked, after all
 arguments are evaluated in their lexical order.
 
 #### Compound assignment
@@ -510,7 +512,7 @@ However, it looks like we will be much safer to use a different attribute for no
 For example, the current VB compiler will not be able to consume them decorated with `ParamArrayAttribute` neither in normal, nor in expanded form. Therefore, an addition of 'params' modifier is likely to break VB consumers, and very likely consumers from other languages or tools.
 
 Given that, non-array `params` parameters are marked with a new `System.Runtime.CompilerServices.ParamCollectionAttribute`.
-```
+``` C#
 namespace System.Runtime.CompilerServices
 {
     [AttributeUsage(AttributeTargets.Parameter, Inherited = true, AllowMultiple = false)]
@@ -548,7 +550,7 @@ Params parameters are implicitly scoped - https://github.com/dotnet/csharplang/b
 
 ### [Resolved] Consider enforcing `scoped` or `params` across overrides
 
-We've previously stated that `params` parameters should be `scoped` by default. However, this introduces odd behavior in overridding, due
+We've previously stated that `params` parameters should be `scoped` by default. However, this introduces odd behavior in overriding, due
 to our existing rules around restating `params`:
 
 ```cs
@@ -560,7 +562,7 @@ class Base
 class Derived : Base
 {
     internal override Span<int> M1(Span<int> s1, // Error, missing `scoped` on override
-                                   Span<int> s2  // No error: parameter is implicitly params, and therefore implicitly scoped
+                                   Span<int> s2  // Proposal: Error: parameter must include either `params` or `scoped`
                                   ) => throw null!;
 }
 ```
@@ -599,9 +601,9 @@ class Program
         Test(2, 3); // error CS9035: Required member 'MyCollection1.F' must be set in the object initializer or attribute constructor.
     }
 
-    // Should an error be reported for the parameter indicating that the constructor that is required
-    // to be available doesn't initialize required members? In other words, should one be able
-    // to declare such a parameter under the specified conditions?
+    // Proposal: An error is reported for the parameter indicating that the constructor that is required
+    // to be available doesn't initialize required members. In other words, one is able
+    // to declare such a parameter under the specified conditions.
     static void Test(params MyCollection1 a)
     {
     }
@@ -614,7 +616,7 @@ https://github.com/dotnet/csharplang/blob/main/meetings/2024/LDM-2024-02-21.md#r
 
 ## Alternatives 
 
-There is an alternative [proposal](https://github.com/dotnet/csharplang/blob/main/proposals/params-span.md) that extends
+There is an alternative [proposal](https://github.com/dotnet/csharplang/blob/main/proposals/rejected/params-span.md) that extends
 `params` only for `ReadOnlySpan<T>`.
 
 Also, one might say, that with [collection expressions](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-12.0/collection-expressions.md)
@@ -624,7 +626,7 @@ especially that other languages are unlikely to support consumption of non-array
 
 ## Related proposals
 - https://github.com/dotnet/csharplang/issues/1757
-- https://github.com/dotnet/csharplang/blob/main/proposals/format.md#extending-params
+- https://github.com/dotnet/csharplang/blob/main/proposals/rejected/format.md#extending-params
  
 ## Related design meetings
 

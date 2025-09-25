@@ -96,10 +96,9 @@ enum_member_declaration
 +    : attributes? identifier ('=' constant_expression)?
 +    ;
 
-
-+
-+    | identifier type_parameter_list? parameter_list? record_base? type_parameter_constraints_clause* record_body
-    ;
++ enum_shape_value_declaration
++    : identifier type_parameter_list? parameter_list? record_base? type_parameter_constraints_clause* record_body
++    ;
 ```
 
 ## Detailed discussion

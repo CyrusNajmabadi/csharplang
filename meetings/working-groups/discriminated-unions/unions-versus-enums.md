@@ -249,7 +249,7 @@ Members are restricted to:
 
 ## 5. Pattern Matching
 
-### 5.1 Enhanced Enum Patterns
+### Enhanced Enum Patterns
 
 Enhanced enums support natural pattern matching syntax:
 
